@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { ScraperService } from './scraper/scraper.service';
 
 @Injectable()
 export class AppService {
+  constructor(private readonly scraperService: ScraperService) {}
   getHello(): string {
-    return 'Hello World!';
+    return 'Service is running';
+  }
+
+  async scrapeBlog() {
+    return this.scraperService.scrapeBlog();
   }
 }

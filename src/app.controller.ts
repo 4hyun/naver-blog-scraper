@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Operation } from './operation/interfaces';
 
 @Controller()
 export class AppController {
@@ -8,5 +9,17 @@ export class AppController {
   @Get()
   getHello(): string {
     return this.appService.getHello();
+  }
+
+  @Post()
+  async scrapeBlog(): Promise<Operation<{ id: string; data?: string }>> {
+    let done = false;
+    let data;
+    await this.appService.scrapeBlog().then((d) => {
+      done = true;
+      data = d;
+    });
+
+    return { id: '111', ...(done ? { done, data } : data) };
   }
 }
