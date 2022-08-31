@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ScraperService } from './scraper/scraper.service';
+import { ScraperService } from './crawler/scraper.service';
 
 @Injectable()
 export class AppService {

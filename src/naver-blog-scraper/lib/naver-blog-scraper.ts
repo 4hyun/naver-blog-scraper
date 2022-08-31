@@ -1,10 +1,10 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import * as cheerio from 'cheerio';
-import { BlogScraperExecutor } from 'src/scraper/interfaces';
+import { BlogScraperExecutor } from 'src/crawler/interfaces';
 import { lastValueFrom } from 'rxjs';
 
-const NAVER_BLOG_URL = 'https://blog.naver.com/mindstay701';
+export const NAVER_BLOG_URL = 'https://blog.naver.com/mindstay701';
 
 @Injectable()
 export class NaverBlogScraper implements BlogScraperExecutor {
@@ -12,7 +12,13 @@ export class NaverBlogScraper implements BlogScraperExecutor {
   async scrape() {
     const response = await lastValueFrom(this.httpService.get(NAVER_BLOG_URL));
     const $ = cheerio.load(response.data);
+    const tableOfContents = this.getTableOfContents($);
     const html = $.html();
-    return html;
+    console.log('TOC: ', tableOfContents);
+    return { message: 'Testing' };
+  }
+
+  getTableOfContents($: cheerio.CheerioAPI) {
+    return $('li[class*="parentcategoryno_-1"] > div[class*="tlink"]');
   }
 }
