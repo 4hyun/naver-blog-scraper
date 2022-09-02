@@ -1,5 +1,4 @@
 import { Controller, Get, Post } from '@nestjs/common';
-import cypress from 'cypress';
 import { AppService } from './app.service';
 import { Operation } from './operation/interfaces';
 
