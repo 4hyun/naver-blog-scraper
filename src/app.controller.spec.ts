@@ -5,7 +5,7 @@ import { lastValueFrom } from 'rxjs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { NAVER_BLOG_URL } from './naver-blog-scraper/lib/naver-blog-scraper';
-import { ScraperModule } from './crawler/scraper.module';
+import { ScraperModule } from './scraper/scraper.module';
 
 describe('AppController', () => {
   let appController: AppController;

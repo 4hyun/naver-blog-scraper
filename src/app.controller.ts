@@ -12,7 +12,7 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Post()
+  @Post('/action/scrape')
   async scrapeBlog(): Promise<Operation<{ id: string; data?: string }>> {
     let done = false;
     let data;
@@ -21,6 +21,9 @@ export class AppController {
       data = d;
     });
 
-    return { id: '111', ...(done ? { done, data } : data) };
+    return {
+      id: 'some-LRO-id',
+      ...(done ? { done, reuslt: data.result } : { done }),
+    };
   }
 }

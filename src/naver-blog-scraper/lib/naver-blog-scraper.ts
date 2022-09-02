@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import * as cheerio from 'cheerio';
-import { BlogScraperExecutor } from 'src/crawler/interfaces';
+import { BlogScraperExecutor } from '../../scraper/interfaces';
 import { lastValueFrom } from 'rxjs';
 
 export const NAVER_BLOG_URL = 'https://blog.naver.com/mindstay701';

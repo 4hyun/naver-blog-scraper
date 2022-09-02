@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
+import { PuppeteerModule } from 'nest-puppeteer';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ScraperModule } from './crawler/scraper.module';
+import { ScraperModule } from './scraper/scraper.module';
 
 @Module({
-  imports: [ScraperModule],
+  imports: [ScraperModule, PuppeteerModule.forRoot({ pipe: true })],
   controllers: [AppController],
   providers: [AppService],
 })
