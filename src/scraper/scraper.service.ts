@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectBrowser } from 'nest-puppeteer';
 import { title } from 'process';
 import { Browser } from 'puppeteer';
@@ -6,6 +6,10 @@ import { Browser } from 'puppeteer';
 import { NAVER_BLOG_URL } from '../naver-blog-scraper/lib/naver-blog-scraper';
 import { TOCTitleFactory } from './classes/TOCTitle';
 import { ROOT_TOC_TITLES } from './constants/selectors';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const TOC_DATA_PATH = '/scraped/toc.json';
 
 @Injectable()
 export class ScraperService {
@@ -95,6 +99,7 @@ export class ScraperService {
           );
           if (childrenTitles.length > 0)
             tocTitle.setChildren(childrenTitles.map(createTocTitle));
+
           return tocTitle;
         }),
       );
@@ -102,8 +107,22 @@ export class ScraperService {
 
     const childrenTitles = await getChildrenTitles();
 
-    // console.log(childrenTitles);
+    this.saveToFile(TOC_DATA_PATH, JSON.stringify(rootTOCTitles));
 
     return { result: { toc: rootTOCTitles } };
   }
+
+  saveToFile(file: string, data: string) {
+    const filepath = path.resolve(__dirname + file);
+    console.log('filepath using `path`: ', filepath);
+    try {
+      fs.writeFileSync(filepath, data);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error saving scraped data to file.',
+      );
+    }
+  }
 }
+
+function getTOCLinkElement() {}

@@ -3,9 +3,14 @@ import { PuppeteerModule } from 'nest-puppeteer';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ScraperModule } from './scraper/scraper.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [ScraperModule, PuppeteerModule.forRoot({ pipe: true })],
+  imports: [
+    PuppeteerModule.forRoot({ pipe: true }),
+    ConfigModule.forRoot(),
+    ScraperModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
