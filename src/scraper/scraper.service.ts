@@ -1,13 +1,12 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectBrowser } from 'nest-puppeteer';
-import { title } from 'process';
 import { Browser } from 'puppeteer';
 
 import { NAVER_BLOG_URL } from '../naver-blog-scraper/lib/naver-blog-scraper';
 import { TOCTitleFactory } from './classes/TOCTitle';
-import { ROOT_TOC_TITLES } from './constants/selectors';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ROOT_TOC_TITLES } from './constants/page-object';
 
 const TOC_DATA_PATH = '/scraped/toc.json';
 

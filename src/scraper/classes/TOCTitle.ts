@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { idMaker } from '../../lib/table-of-contents/id-maker';
-import { TOC_TITLE_WRAPPER } from '../constants/selectors';
+import { TOC_TITLE_WRAPPER } from '../constants/page-object';
 
 const idGen = idMaker();
 
