@@ -8,17 +8,17 @@ export class StorageService {
   private options: StorageOptions;
   private diskDrivers: { [key: string]: any };
   private driverManager: DriverManager;
-  constructor() {
+  constructor(config: any) {
     this.options = { disks: {} };
     this.diskDrivers = {};
-    this.driverManager = new DriverManager();
+    this.driverManager = new DriverManager(config);
   }
 
   registerDriver(disk, driver) {
     this.diskDrivers[disk] = driver;
   }
 
-  getDriver(disk: string): StorageDriver {
+  getDisk(disk: string): StorageDriver {
     if (disk in this.diskDrivers) return this.diskDrivers[disk];
 
     const driver = this.newDriver(disk);
