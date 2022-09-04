@@ -1,11 +1,18 @@
-import { Local } from '../lib/drivers/Local';
+import { LocalFileSystem } from '../lib/drivers/LocalFileSystem';
 
 export class DriverManager {
-  private readonly driverMap: Record<string, any> = {
-    local: Local,
+  /**
+   * Default disk.
+   */
+  private defaultDisk: string | undefined;
+  private readonly drivers: Record<string, any> = {
+    local: LocalFileSystem,
   };
+  constructor(config: any) {
+    this.defaultDisk = config.default;
+  }
   getDriver(disk: string, config: Record<string, any>) {
-    const driver = this.driverMap[config.driver];
+    const driver = this.drivers[config.driver];
     return new driver(disk, config);
   }
 }
