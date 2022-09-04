@@ -2,5 +2,6 @@
   "dimmer.enabled": false,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "prettier.endOfLine": "auto"
+  "prettier.endOfLine": "auto",
+  "editor.maxTokenizationLineLength": 20000
 }

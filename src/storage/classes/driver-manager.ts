@@ -13,6 +13,6 @@ export class DriverManager {
   }
   getDriver(disk: string, config: Record<string, any>) {
     const driver = this.drivers[config.driver];
-    return new driver(disk, config);
+    return new driver(config);
   }
 }

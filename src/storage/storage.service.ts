@@ -27,6 +27,8 @@ export class StorageService {
   }
 
   newDriver(disk: string): StorageDriver {
+    console.log('DEBUG: disk', disk);
+    console.log('DEBUG: this.options.disks[disk]', this.options.disks[disk]);
     return this.driverManager.getDriver(disk, this.options.disks[disk]);
   }
 }
