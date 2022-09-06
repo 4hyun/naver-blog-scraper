@@ -10,7 +10,9 @@ import { ROOT_TOC_TITLES } from './constants/page-object';
 import { StorageService } from 'src/storage/storage.service';
 import * as cheerio from 'cheerio';
 
+const MAIN_IFRAME_SELECTOR = 'iframe#mainFrame';
 const TOC_DATA_PATH = '/scraped/toc.json';
+const SKIP_TOC = ['23'];
 
 @Injectable()
 export class ScraperService {
@@ -26,7 +28,7 @@ export class ScraperService {
     const page = await this.browser.newPage();
     await page.goto(NAVER_BLOG_URL);
     await page.screenshot({ path: 'screenshot.png' });
-    const mainIframeElement = await page.$('iframe');
+    const mainIframeElement = await page.$(MAIN_IFRAME_SELECTOR);
     const mainIframe = await mainIframeElement.contentFrame();
 
     // const iframeContent = await mainIframe.content();
@@ -39,7 +41,7 @@ export class ScraperService {
 
         const categoryId = $anchor.id.replace('category', '');
 
-        const href = $anchor.getAttribute('href');
+        const href = $anchor.getAttribute('href').trim();
 
         const postCount = `${
           $postCount == null ? '(0)' : $postCount.textContent
@@ -107,65 +109,98 @@ export class ScraperService {
     };
 
     await getChildrenTitles();
+    const rootTOCTitlesFiltered = rootTOCTitles.filter(
+      ({ categoryId }) => !SKIP_TOC.includes(categoryId),
+    );
     const disk = this.storageService.getDisk('local');
-    await disk.put(TOC_DATA_PATH, JSON.stringify(rootTOCTitles));
+    await disk.put(TOC_DATA_PATH, JSON.stringify(rootTOCTitlesFiltered));
 
     // const samplePost = posts[1];
-    const posts = await this.getTOCFromFile();
+    const topLevelTitles = await this.getTitlesFromFile();
     const scrapePostsAndSave = async () => {
-      for (const post of posts) {
-        const postUrl = mainIframe.url() + post.href;
-        await mainIframe.goto(postUrl);
-        /*         await mainIframe.page().screenshot({ path: 'sample-post-page.png' }); */
+      let baseUrl = '';
+      const isBaseUrlEmpty = () => {
+        if (typeof baseUrl !== 'string')
+          throw new InternalServerErrorException();
+        if (baseUrl.length === 0) return true;
+        return false;
+      };
+      const setBaseUrl = (url: string) => {
+        const urlObj = new URL(url);
+        const { protocol, host } = urlObj;
+        baseUrl = `${protocol}//${host}`;
+        console.log('SET_BASEURL : ', baseUrl);
+      };
+      // const testPage = await this.browser.newPage();
+      // const mainIframe = testPage;
+      for (const title of topLevelTitles) {
+        if (isBaseUrlEmpty()) setBaseUrl(mainIframe.url());
 
-        const getPostContent = async () => {
-          const mainIframeElement = await page.$('iframe');
-          const mainIframe = await mainIframeElement.contentFrame();
+        for (const child of title.children) {
+          const titleLink = baseUrl + child.href;
+          await mainIframe.goto(titleLink);
+          console.log('DEBUG testPage url : ', mainIframe.url(), '\n');
+          /*         await mainIframe.page().screenshot({ path: 'sample-post-page.png' }); */
 
-          const postsHtmlList = await mainIframe.$$eval(
-            'div#postListBody div.post-back',
-            ($posts) => {
-              return $posts.map(($post, i) => {
-                return {
-                  html: $post.innerHTML,
-                };
-              });
-            },
-          );
+          const getPostDataOnInnerPage = async (pageIndex = '1') => {
+            const mainIframeElement = await page.$(MAIN_IFRAME_SELECTOR);
+            const mainIframe = await mainIframeElement.contentFrame();
+            const postsHtmlList = await mainIframe.$$eval(
+              'div#postListBody > div.post._post_wrap > div.post-back',
+              ($posts) => {
+                console.log('$posts count : ', $posts.length);
+                return $posts.map(($post, i) => {
+                  return {
+                    html: $post.innerHTML,
+                  };
+                });
+              },
+            );
 
-          const postData = postsHtmlList.map(({ html }) => {
-            const getPostId = () => {
+            const postData = postsHtmlList.map(({ html }) => {
+              const getPostId = () => {
+                const $ = cheerio.load(html);
+
+                let postUrl = $('input.copyTargetUrl').val();
+                if (Array.isArray(postUrl)) postUrl = postUrl[0];
+                return postIdFromUrl(postUrl);
+              };
+              const postId = getPostId();
+              const file = `/scraped/post-${postId}.json`;
               const $ = cheerio.load(html);
+              const title = $('.htitle > span.itemSubjectBoldfont').text();
+              const cHeadingTitle = $('#postViewArea .c-heading__title').text();
+              const cHeadingContent = $(
+                '#postViewArea .c-heading__content',
+              ).text();
+              // debugGetPostContent({ title, cHeadingTitle, cHeadingContent, postId });
+              return {
+                postId,
+                file,
+                title,
+                cHeadingTitle,
+                cHeadingContent,
+                html,
+              };
+            });
 
-              let postUrl = $('input.copyTargetUrl').val();
-              if (Array.isArray(postUrl)) postUrl = postUrl[0];
-              return postIdFromUrl(postUrl);
-            };
-            const postId = getPostId();
-            const file = `/scraped/post-${postId}.json`;
-            const $ = cheerio.load(html);
-            const title = $('.htitle > span.itemSubjectBoldfont').text();
-            const cHeadingTitle = $('#postViewArea .c-heading__title').text();
-            const cHeadingContent = $(
-              '#postViewArea .c-heading__content',
-            ).text();
-            // debugGetPostContent({ title, cHeadingTitle, cHeadingContent, postId });
-            return {
-              postId,
-              file,
-              title,
-              cHeadingTitle,
-              cHeadingContent,
-              html,
-            };
-          });
+            return postData;
+          };
 
-          postData.map(async (data) => {
+          const postData = await getPostDataOnInnerPage();
+          console.log(
+            `postData on innerPage of titlePage "${child.title}"`,
+            postData.length,
+          );
+        }
+
+        return;
+        /*         const writePostDataToFile = async (posts: any[]) => {
+          posts.map(async (data) => {
             await disk.put(data.file, JSON.stringify(data));
           });
         };
-
-        await getPostContent();
+        await writePostDataToFile(postData); */
       }
     };
 
@@ -174,7 +209,7 @@ export class ScraperService {
     return { result: { toc: rootTOCTitles } };
   }
 
-  async getTOCFromFile(): Promise<any[]> {
+  async getTitlesFromFile(): Promise<any[]> {
     console.log('WIP >> will sample scrape 1 post from toc.json');
     const disk = this.storageService.getDisk('local');
     const { content } = await disk.get(TOC_DATA_PATH);
@@ -197,6 +232,6 @@ function debugGetPostContent({
 }
 
 function postIdFromUrl(url: string) {
-  console.log('url: ', url);
+  console.log('postIdFromUrl() url argument: ', url);
   return url.split('/').pop();
 }

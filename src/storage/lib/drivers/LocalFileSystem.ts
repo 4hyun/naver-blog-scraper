@@ -50,7 +50,7 @@ export class LocalFileSystem implements StorageDriver {
     content: Buffer | NodeJS.ReadableStream | string,
   ) {
     const fullPath = this.fullPath(location);
-    console.log('DEBUG: fullPath', fullPath);
+    // console.log('DEBUG: ', fullPath);
     try {
       if (isReadableStream(content)) {
         const dir = path.dirname(location);
