@@ -198,7 +198,6 @@ export class ScraperService {
                 const cHeadingContent = $(
                   '#postViewArea .c-heading__content',
                 ).text();
-                // debugGetPostContent({ title, cHeadingTitle, cHeadingContent, postId });
                 return {
                   postId,
                   file,
@@ -218,56 +217,16 @@ export class ScraperService {
             const postData = await getPostDataOnCurrentPage();
             await this.writePostDataToFile(postData);
 
-            //* Loop Pagination (if exists)
-            /*  const getPaginationItemOnCurrentPage = async () => {
-              const mainIframe = await mainIframeElement.contentFrame();
+            //* Loop Pagination (if exists) - Setup
 
-              const result = await mainIframe.$$eval(
-                PAGINATION_ITEMS_SELECTOR,
-                ($paginationItems) => {
-                  console.log(
-                    '$paginationItems count: ',
-                    $paginationItems.length,
-                  );
-                  return $paginationItems;
-                },
-              );
-              return { result };
-            };
-
-            const { result: currentPagePaginationItems } =
-              await getPaginationItemOnCurrentPage();
-
-            if (currentPagePaginationItems.length > 0) {
-              for (const thePage of currentPagePaginationItems) {
-                const postData = await getPostDataOnCurrentPage();
-                console.log(
-                  `postData on innerPage of titlePage "${child.title}"`,
-                  postData.length,
-                );
-                await this.writePostDataToFile(postData);
-              }
-            } */
-
-            //* check for next-pagination-item
-            /* 
-            const navigatePostPage = async (path: string) => {
-              await postPage.goto('https://blog.naver.com' + path);
-            };
-            const getPostPageIframe = async () => {
-              return await postPage.$(MAIN_IFRAME_SELECTOR);
-            };
-            const initializePostPage = async (startingPostPagePath: string) => {
-              await navigatePostPage(startingPostPagePath);
-            }; */
             const getNextPageItem = async () => {
               const result = await mainIframe.$$eval(
                 NEXT_PAGE_ITEM_SELECTOR,
                 ($nextPageItem) => {
-                  console.log(
+                  /*                   console.log(
                     '[1] getNextPageItem() $nextPageItem.length: ',
                     $nextPageItem.length,
-                  );
+                  ); */
                   let result = null;
                   if ($nextPageItem.length === 1) {
                     const href = $nextPageItem[0].getAttribute('href');
@@ -277,7 +236,7 @@ export class ScraperService {
                 },
               );
 
-              console.log('[2] getNextPageItem() result: ', result, '\n');
+              // console.log('[2] getNextPageItem() result: ', result, '\n');
               return result;
             };
 
@@ -286,38 +245,23 @@ export class ScraperService {
               await mainIframe.goto('https://blog.naver.com' + path);
             };
 
-            const getCurrentFrameUrl = () => {
-              return mainIframe.url();
-            };
-
-            // const nextPageItem = await getNextPageItem();
-            // console.log(nextPageItem);
+            //* Loop Pagination (if exists) - Start
             let nextPageItem = await getNextPageItem();
             let stopped = nextPageItem == null;
             while (!stopped) {
               console.log(`Paginated.`);
               await navigateToNextPage(nextPageItem.href);
-              const debugUrl = new URL(getCurrentFrameUrl());
-              // page.screenshot({ path: `${debugUrl.toString()}.png` });
-              const currentPage = debugUrl.searchParams.get('currentPage');
-              // console.log(`pagination for url : ${getCurrentFrameUrl()}`);
-              console.log(`paginating for title: ${child.title}
-pagination for page:${currentPage}
-currentFrame url: ${debugUrl.toString()}
-`);
 
               const postData = await getPostDataOnCurrentPage();
-              console.log('>> postData: ', postData);
               await this.writePostDataToFile(postData);
               nextPageItem = await getNextPageItem();
               stopped = nextPageItem == null;
             }
-            // return;
 
             //! 'break' during development to NOT loop everything
             if (child.categoryId === '40') {
-              /* 가족갈등.. */ setBreakLoop(true);
-              break;
+              // /* 가족갈등.. */ setBreakLoop(true);
+              // break;
             }
           }
         if (breakLoop) {
@@ -341,19 +285,6 @@ currentFrame url: ${debugUrl.toString()}
   }
 }
 
-function debugGetPostContent({
-  cHeadingTitle,
-  cHeadingContent,
-  title,
-  postId,
-}) {
-  console.log('postId: ', postId);
-  console.log('title: ', title);
-  console.log('cHeadingTitle: ', cHeadingTitle);
-  console.log('cHeadingContent: ', cHeadingContent);
-}
-
 function postIdFromUrl(url: string) {
-  // console.log('postIdFromUrl() url argument: ', url);
   return url.split('/').pop();
 }
