@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Operation } from './operation/interfaces';
 import { TestDataService } from './test-data.service';
 import * as path from 'path';
+import { Response } from 'express';
+import { StorageService } from './storage/storage.service';
 
 type SepType = 'windows' | 'posix';
 
@@ -11,6 +13,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly testDataService: TestDataService,
+    private readonly storageService: StorageService,
   ) {}
 
   @Get()
@@ -46,8 +49,8 @@ export class AppController {
     @Query('prefix') prefix: string,
     @Query('sep') sep: SepType = 'posix',
   ) {
-    let filenames = [];
     const isPosixSystem = path.sep === '/';
+    let filenames = [];
     for await (const filename of this.appService.testGetFilesByPrefix(prefix)) {
       filenames.push(filename);
     }
@@ -64,5 +67,39 @@ export class AppController {
       });
     }
     return { filenames, count: filenames.length };
+  }
+
+  @Post('initialize-new-fields-on-scraped-posts')
+  async initializeNewFieldsOnScrapedPosts(
+    @Body() body: any,
+    @Query('dry_run') dryRun: boolean = true,
+    @Res() res: Response,
+  ) {
+    if (Object.keys(body).length === 0) {
+      res.status(400).send({ message: 'Field object is empty.' });
+    }
+
+    const newFields = {};
+    for (const field in body) {
+      newFields[field] = body[field];
+    }
+
+    const filePaths = [];
+    for await (const filename of this.appService.testGetFilesByPrefix(
+      '/scraped/post-',
+    )) {
+      filePaths.push(filename);
+    }
+
+    const fileNames = filePaths.map(({ path: p }) =>
+      p.split(path.sep).join(path.posix.sep),
+    );
+
+    const disk = this.storageService.getDisk('local');
+    const files = await Promise.all(
+      fileNames.map(async (filename) => await disk.get(filename)),
+    );
+
+    res.send({ files, count: files.length });
   }
 }
