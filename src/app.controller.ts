@@ -1,7 +1,10 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Operation } from './operation/interfaces';
 import { TestDataService } from './test-data.service';
+import * as path from 'path';
+
+type SepType = 'windows' | 'posix';
 
 @Controller()
 export class AppController {
@@ -36,5 +39,30 @@ export class AppController {
     console.log('result: ', result); */
     const result = await this.testDataService.getTestData();
     return { data: result };
+  }
+
+  @Get('test-get-files-by-prefix')
+  async testGetFilesByPrefix(
+    @Query('prefix') prefix: string,
+    @Query('sep') sep: SepType = 'posix',
+  ) {
+    let filenames = [];
+    const isPosixSystem = path.sep === '/';
+    for await (const filename of this.appService.testGetFilesByPrefix(prefix)) {
+      filenames.push(filename);
+    }
+    if (sep !== 'posix' && isPosixSystem) {
+      filenames = filenames.map((name) => {
+        const pathValue = name.path.split(path.sep).join(path.win32.sep);
+        return { ...name, path: pathValue };
+      });
+    }
+    if (sep === 'posix' && !isPosixSystem) {
+      filenames = filenames.map((name) => {
+        const pathValue = name.path.split(path.sep).join(path.posix.sep);
+        return { ...name, path: pathValue };
+      });
+    }
+    return { filenames, count: filenames.length };
   }
 }

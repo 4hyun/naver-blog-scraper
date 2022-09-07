@@ -5,6 +5,7 @@ import { UnknownException } from 'src/storage/exceptions/UnknownException';
 import { StorageDriver } from '../../interfaces/storage-driver';
 import { isReadableStream } from '../utils';
 import { pipeline } from 'node:stream/promises';
+import { FileListResponse } from '../types';
 
 const NOT_IMPLEMENTED_TEXT = 'Not implemented';
 
@@ -63,6 +64,48 @@ export class LocalFileSystem implements StorageDriver {
       return { raw: result };
     } catch (e) {
       throw handleError(e, location);
+    }
+  }
+
+  /**
+   * List files with a given prefix.
+   */
+  public flatList(prefix = ''): AsyncIterable<FileListResponse> {
+    const fullPrefix = this.fullPath(prefix);
+    return this._flatDirIterator(fullPrefix, prefix);
+  }
+
+  private async *_flatDirIterator(
+    prefix: string,
+    originalPrefix: string,
+  ): AsyncIterable<FileListResponse> {
+    const prefixDirectory =
+      prefix[prefix.length - 1] === path.sep ? prefix : path.dirname(prefix);
+
+    try {
+      const dir = await fse.opendir(prefixDirectory);
+
+      for await (const file of dir) {
+        const fileName = path.join(prefixDirectory, file.name);
+        if (fileName.startsWith(prefix)) {
+          if (file.isDirectory()) {
+            yield* this._flatDirIterator(
+              path.join(fileName, path.sep),
+              originalPrefix,
+            );
+          } else if (file.isFile()) {
+            const pathValue = path.relative(this.rootDir, fileName);
+            yield {
+              raw: null,
+              path: pathValue,
+            };
+          }
+        }
+      }
+    } catch (e) {
+      if (e.code !== 'ENOENT') {
+        throw handleError(e, originalPrefix);
+      }
     }
   }
 }

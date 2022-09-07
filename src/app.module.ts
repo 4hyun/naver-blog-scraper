@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TestData, TestDataSchema } from './shared/schemas/test.schema';
 import { TestDataService } from './test-data.service';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TestDataService } from './test-data.service';
       { name: TestData.name, schema: TestDataSchema },
     ]),
     ScraperModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService, TestDataService],
